@@ -1,0 +1,164 @@
+spring:
+  config:
+    activate:
+      on-profile: '!api-docs'
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    url: jdbc:mysql://localhost:3306/ssoLoginBack?useUnicode=true&characterEncoding=utf8&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC&createDatabaseIfNotExist=true
+    username: root
+    password:
+    hikari:
+      poolName: Hikari
+      auto-commit: false
+      data-source-properties:
+        cachePrepStmts: true
+        prepStmtCacheSize: 250
+        prepStmtCacheSqlLimit: 2048
+        useServerPrepStmts: true
+  messages:
+    cache-duration: PT1S # 1 second, see the ISO 8601 standard
+  thymeleaf:
+    cache: false
+    async:
+      enabled: false
+    enabled: false
+    sampler:
+      probability: 1 # report 100% of traces
+  zipkin: # Use the "zipkin" Maven profile to have the Spring Cloud Zipkin dependencies
+    base-url: http://localhost:9411
+    enabled: false
+    locator:
+      discovery:
+        enabled: true
+
+server:
+  port: 9090
+springdoc:
+  api-docs:
+    enabled: false
+---
+spring:
+  application:
+    name: back
+  profiles:
+    active: #spring.profiles.active#
+    group:
+      dev:
+        - dev
+        - api-docs
+        # Uncomment to activate TLS for the dev profile
+        #- tls
+  jmx:
+    enabled: false
+  data:
+    jpa:
+      repositories:
+        bootstrap-mode: deferred
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate.jdbc.time_zone: UTC
+      hibernate.id.new_generator_mappings: true
+      hibernate.connection.provider_disables_autocommit: true
+      hibernate.cache.use_second_level_cache: false
+      hibernate.cache.use_query_cache: false
+      hibernate.generate_statistics: false
+      # modify batch size as necessary
+      hibernate.jdbc.batch_size: 25
+      hibernate.order_inserts: true
+      hibernate.order_updates: true
+      hibernate.query.fail_on_pagination_over_collection_fetch: true
+      hibernate.query.in_clause_parameter_padding: true
+    hibernate:
+      ddl-auto: none
+      naming:
+        physical-strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
+        implicit-strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy
+  messages:
+    basename: i18n/messages
+  main:
+    allow-bean-definition-overriding: true
+  task:
+    execution:
+      thread-name-prefix: back
+      pool:
+        core-size: 2
+        max-size: 50
+        queue-capacity: 10000
+    scheduling:
+      thread-name-prefix: sso-login-back-scheduling-
+      pool:
+        size: 2
+  thymeleaf:
+    mode: HTML
+  output:
+    ansi:
+      console-available: true
+  security:
+    oauth2:
+      client:
+        authority-mapping:
+          ROLE_USER: ROLE_USER
+          ROLE_ADMIN: ROLE_ADMIN
+        provider:
+          oidc:
+            issuer-uri: http://localhost:8080/realms/Pi-Dev
+            authorization-uri: http://localhost:8080/realms/Pi-Dev/protocol/openid-connect/auth
+            token-uri: http://localhost:8080/realms/Pi-Dev/protocol/openid-connect/token
+            user-info-uri: http://localhost:8080/realms/Pi-Dev/protocol/openid-connect/userinfo
+            jwk-set-uri: http://localhost:8080/realms/Pi-Dev/protocol/openid-connect/certs
+        registration:
+          oidc:
+            client-id: pidev-client-ang
+            client-secret:
+            scope: openid, profile, email, offline_access # last one for refresh tokens
+keycloak:
+  realm: google
+  resource: youtube
+  auth-server-url: http://localhost:8080/auth
+  credentials:
+    secret:
+  ssl-required: external
+  use-resource-role-mappings: true
+  bearer-only: true
+  public-client: true
+  cors: true
+  principal-attribute: admin
+
+server:
+  servlet:
+    session:
+      cookie:
+        http-only: true
+
+springdoc:
+  show-actuator: true
+
+# Properties to be exposed on the /info management endpoint
+info:
+  # Comma separated list of profiles that will trigger the ribbon to show
+  display-ribbon-on-profiles: 'dev'
+
+jhipster:
+  clientApp:
+    name: 'BackApp'
+  mail:
+    from: ssoLoginBack@localhost
+  api-docs:
+    default-include-pattern: ${server.servlet.context-path:}/api/**
+    management-include-pattern: ${server.servlet.context-path:}/management/**
+    title:  Back API
+    description: Back API documentation
+    version: 0.0.1
+    terms-of-service-url:
+    contact-name:
+    contact-url:
+    contact-email:
+    license: unlicensed
+    license-url:
+  security:
+    oauth2:
+      audience:
+        - account
+        - api://default
+
